@@ -3,27 +3,38 @@ import os
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-from parser import parse_vcf
-from analyze import analyze_variants
-from rules import apply_rules
-from risk import calculate_risk_score
-from llm import generate_llm_explanation
+import sys
+from pathlib import Path
+
+# Add the parent directory (app) to the Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from .parser import parse_vcf
+from .analyze import analyze_variants
+from .rules import apply_rules
+from .risk import calculate_risk_score
+from .llm import generate_llm_explanation
 
 load_dotenv(dotenv_path="C:\\Users\\Blessy\\Desktop\\RIFTHACK\\TeamMoon_RIFT-26\\backend\\.env")
 
 
-def build_final_json(variants, analyzed, rule_results, risk_score):
+def build_final_json(variants, analyzed, rule_results, risk_score, drugs):
     """
     Builds final JSON output required by project spec
     """
 
     primary = analyzed[0] if analyzed else {}
+    if drugs and len(drugs) > 0:
+        primary_drug = drugs[0]
+    else:
+        primary_drug = rule_results[0].get("drug", "unknown") if rule_results else "unknown"
+
+    # Limit detected variants output slightly to save bandwidth if needed, but project says full JSON
+    detected_variants = variants
 
     return {
         "patient_id": "PATIENT_001",
-
-        "drug": rule_results[0].get("drug", "unknown") if rule_results else "unknown",
-
+        "drug": primary_drug,
         "timestamp": datetime.now(timezone.utc).isoformat(),
 
         "risk_assessment": {
@@ -33,12 +44,14 @@ def build_final_json(variants, analyzed, rule_results, risk_score):
         },
 
         "pharmacogenomic_profile": {
-            "primary_gene": primary.get("gene"),
-            "diplotype": "/".join(primary.get("stars", [])),
-            "phenotype": primary.get("phenotype"),
-            "detected_variants": variants
+            "primary_gene": primary.get("gene", "UNKNOWN"),
+            "diplotype": primary.get("diplotype", "*1/*1"),
+            "phenotype": primary.get("phenotype", "UNKNOWN"),
+            "detected_variants": detected_variants
         },
 
+        # If multiple drugs, just return the first one's rec for this schema, or full list.
+        # But schema requests an object, so we'll wrap or return the first.
         "clinical_recommendation": rule_results[0] if rule_results else {},
 
         "llm_generated_explanation": {
@@ -54,10 +67,8 @@ def build_final_json(variants, analyzed, rule_results, risk_score):
 
 
 def main():
-
-    # 🔴 UPDATE YOUR VCF PATH HERE
-    vcf_path = r"C:\Users\Blessy\Desktop\RIFTHACK\TeamMoon_RIFT-26\sample_vcfs\TC_P1_PATIENT_001_Normal.vcf"
-
+    vcf_path = r"c:\Users\priya\OneDrive\Desktop\PharmaGuard\PharmaGuard_AI-RIFT26\sample_vcfs\TC_P1_PATIENT_001_Normal.vcf"
+    test_drugs = ["WARFARIN"]
     # STEP 1: Parse VCF
     variants = parse_vcf(vcf_path)
 
@@ -65,7 +76,7 @@ def main():
     analyzed = analyze_variants(variants)
 
     # STEP 3: Apply drug rules
-    rule_results = apply_rules(analyzed)
+    rule_results = apply_rules(analyzed, test_drugs)
 
     # STEP 4: Calculate risk
     risk_score = calculate_risk_score(rule_results)
@@ -75,7 +86,8 @@ def main():
         variants,
         analyzed,
         rule_results,
-        risk_score
+        risk_score,
+        test_drugs
     )
 
     # STEP 6: Prepare LLM input

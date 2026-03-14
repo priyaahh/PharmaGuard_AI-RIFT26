@@ -1,32 +1,25 @@
 def calculate_risk_score(rule_results):
-
-    score = 0
-
+    """
+    Calculate overall risk from rules.
+    Returns:
+       { "category": "Safe|Adjust Dosage|Toxic", "confidence": float, "severity": "none|low|moderate|high|critical" }
+    """
+    if not rule_results:
+        return {"category": "Unknown", "confidence": 0.0, "severity": "unknown"}
+        
+    # Find highest risk among drugs
+    highest_risk = "low"
     for r in rule_results:
-        level = r.get("risk_level")
-
-        if level == "high":
-            score += 3
-        elif level == "moderate":
-            score += 2
-        else:
-            score += 1
-
-    if score >= 3:
-        category = "HIGH RISK"
-        severity = "high"
-        confidence = 0.9
-    elif score == 2:
-        category = "MODERATE RISK"
-        severity = "moderate"
-        confidence = 0.7
+        rl = r.get("risk_level", "low")
+        if rl == "high":
+            highest_risk = "high"
+            break
+        elif rl == "moderate":
+            highest_risk = "moderate"
+            
+    if highest_risk == "high":
+        return {"category": "Toxic", "confidence": 0.95, "severity": "high"}
+    elif highest_risk == "moderate":
+        return {"category": "Adjust Dosage", "confidence": 0.85, "severity": "moderate"}
     else:
-        category = "LOW RISK"
-        severity = "low"
-        confidence = 0.5
-
-    return {
-        "category": category,
-        "confidence": confidence,
-        "severity": severity
-    }
+        return {"category": "Safe", "confidence": 0.90, "severity": "low"}
