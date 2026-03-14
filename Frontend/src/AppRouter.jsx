@@ -14,6 +14,7 @@ import ExportSharePage from './pages/ExportSharePage'
 
 import ErrorHandlingPage from './pages/ErrorHandlingPage'
 import AiInsightsPage from './pages/AiInsightsPage'
+import PlatformPage from './pages/PlatformPage'
 
 const router = createBrowserRouter([
   {
@@ -24,12 +25,12 @@ const router = createBrowserRouter([
 
       { path: 'about', element: <AboutPage /> },
       { path: 'cpic', element: <CpicPage /> },
-      { path: 'vcf-upload', element: <VcfUploadPage /> },
-      { path: 'drug-input', element: <DrugInputPage /> },
-      { path: 'results-display', element: <ResultsDisplayPage /> },
-      { path: 'export-share', element: <ExportSharePage /> },
-      { path: 'error-handling', element: <ErrorHandlingPage /> },
-      { path: 'ai-insights', element: <AiInsightsPage /> },
+      { path: 'vcf-upload', element: <PlatformPage /> },
+      { path: 'drug-input', element: <PlatformPage /> },
+      { path: 'results-display', element: <PlatformPage /> },
+      { path: 'export-share', element: <PlatformPage /> },
+      { path: 'error-handling', element: <PlatformPage /> },
+      { path: 'ai-insights', element: <PlatformPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
